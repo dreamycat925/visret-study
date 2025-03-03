@@ -31,6 +31,14 @@ If you use this code or model in your research, please cite our paper:
 ```
 *Citation details will be added after the publication of our paper.*
 
+
+## Note
+
+- The repository does not include raw patient data due to privacy concerns.
+- The statistical models were implemented using Bayesian inference with PyMC.
+- The scripts assume that data preprocessing (e.g., reading Excel files, selecting relevant cases) has been completed beforehand.
+- If you use this code, please cite the corresponding paper.
+
 ## License
 
 This code is released under the MIT License.
