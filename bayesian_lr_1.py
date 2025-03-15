@@ -5,6 +5,9 @@ import arviz as az
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 
+# 🔹 NumPy のランダムシードを設定（PyMC のランダム性にも影響）
+np.random.seed(42)
+
 # 説明変数
 X = df_com[df_com['group'] == 'hs'][['検査時の年齢', '性別', '教育歴', '絵の再認課題_点数', '絵の再認課題_虚再認の数']].copy()
 

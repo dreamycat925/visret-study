@@ -7,6 +7,9 @@ import seaborn as sns
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import roc_curve, auc
 
+# 🔹 NumPy のランダムシードを設定（PyMC のランダム性にも影響）
+np.random.seed(42)
+
 # ✅ AP群を除外し、HP vs AD の比較を行う
 Z = df_com[df_com['group'].isin(['hs', 'ci'])].copy()
 

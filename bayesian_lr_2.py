@@ -9,6 +9,9 @@ import seaborn as sns
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import roc_curve, auc
 
+# 🔹 NumPy のランダムシードを設定（PyMC のランダム性にも影響）
+np.random.seed(42)
+
 # 説明変数
 X = df_com.copy()
 X = X[X['group'] != 'ci']
