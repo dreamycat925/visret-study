@@ -1,4 +1,4 @@
-# 点数とgroup
+# 点数とgroup　性別抜き
 
 import pymc as pm
 import numpy as np
@@ -9,16 +9,10 @@ import seaborn as sns
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import roc_curve, auc
 
-# 🔹 NumPy のランダムシードを設定（PyMC のランダム性にも影響）
-np.random.seed(42)
-
 # 説明変数
 X = df_com.copy()
 X = X[X['group'] != 'ci']
-X = X[['検査時の年齢', '性別', '教育歴', '絵の再認課題_点数', '絵の再認課題_虚再認の数']]
-
-# カテゴリ変数のエンコーディング
-X = pd.get_dummies(X, columns=['性別'], drop_first=True, dtype=int)  
+X = X[['検査時の年齢', '教育歴', '絵の再認課題_点数', '絵の再認課題_虚再認の数']]
 
 # ✅ グループを数値化（0=健常, 1=患者）
 X["group"] = (df_com["group"] == "ap").astype(int)
@@ -34,7 +28,6 @@ X["group"] = (df_com["group"] == "ap").astype(int)
 with pm.Model() as model_score_adj:
     beta_0 = pm.Normal("beta_0", mu=0, sigma=1)  # 切片
     beta_group = pm.Normal("beta_group", mu=0, sigma=1)  # 群の影響
-    beta_gender = pm.Normal("beta_gender", mu=0, sigma=1)
     beta_age = pm.Normal("beta_age", mu=0, sigma=1)  # 年齢の影響
     beta_edu = pm.Normal("beta_edu", mu=0, sigma=1)  # 教育歴の影響
     beta_false_recognition = pm.Normal("beta_false_recognition", mu=0, sigma=1)  # 教育歴の影響
@@ -43,7 +36,6 @@ with pm.Model() as model_score_adj:
         beta_0
         + beta_group * X["group"]
         + beta_age * X["検査時の年齢"]
-        + beta_gender * X["性別_男"]
         + beta_edu * X["教育歴"]
         + beta_false_recognition * X['絵の再認課題_虚再認の数']
     )
@@ -52,7 +44,7 @@ with pm.Model() as model_score_adj:
     y_obs = pm.Normal("y_obs", mu=mu, sigma=sigma, observed=X["絵の再認課題_点数"])
 
     # ✅ MCMC サンプリング
-    trace_score_adj = pm.sample(2000, tune=1000, return_inferencedata=True)
+    trace_score_adj = pm.sample(2000, tune=1000, chains=4, return_inferencedata=True)
 
 # 事後分布の要約
 summary = az.summary(trace_score_adj, stat_funcs={"median": np.median}, hdi_prob=0.95)
@@ -67,6 +59,11 @@ def compute_posterior_probabilities(trace, param):
     return prob_positive, prob_negative
 
 print("\n事後確率:")
-for param in ["beta_group", "beta_age", "beta_edu", "beta_gender", "beta_false_recognition"]:
+for param in ["beta_group", "beta_age", "beta_edu", "beta_false_recognition"]:
     p_pos, p_neg = compute_posterior_probabilities(trace_score_adj, param)
     print(f"{param}: P(β > 0) = {p_pos:.3f}, P(β < 0) = {p_neg:.3f}")
+
+az.plot_trace(trace_score_adj, figsize=(20, 12), combined=False, compact=False)
+plt.tight_layout()
+az.plot_posterior(trace_score_adj, hdi_prob=0.95)
+plt.show()

@@ -5,9 +5,6 @@ import arviz as az
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 
-# 🔹 NumPy のランダムシードを設定（PyMC のランダム性にも影響）
-np.random.seed(42)
-
 # 説明変数
 X = df_com[df_com['group'] == 'hs'][['検査時の年齢', '性別', '教育歴', '絵の再認課題_点数', '絵の再認課題_虚再認の数']].copy()
 
@@ -43,10 +40,12 @@ with pm.Model() as model:
     y_obs = pm.Normal("y_obs", mu=mu, sigma=sigma, observed=X["絵の再認課題_点数"])
 
     # ✅ MCMCサンプリング
-    trace = pm.sample(2000, tune=1000, return_inferencedata=True, idata_kwargs={"log_likelihood": True})
+    trace = pm.sample(2000, tune=1000, chains=4, return_inferencedata=True, idata_kwargs={"log_likelihood": True})
 
 # ✅ 事後分布の可視化
-az.plot_posterior(trace, var_names=["beta_false_recog", "beta_age", "beta_edu", "beta_gender"])
+az.plot_trace(trace, figsize=(20, 12), combined=False, compact=False)
+plt.tight_layout()
+az.plot_posterior(trace, hdi_prob=0.95)
 plt.show()
 
 # 事後分布の要約
@@ -67,6 +66,3 @@ print("\n事後確率:")
 for param in ["beta_age", "beta_edu", "beta_gender", "beta_false_recog"]:
     p_pos, p_neg = compute_posterior_probabilities(trace, param)
     print(f"{param}: P(β > 0) = {p_pos:.3f}, P(β < 0) = {p_neg:.3f}")
-
-def memory_score(score, edu, false_recog, trace):
-    return score + (az.summary(trace, stat_funcs={"median": np.median}).loc['beta_edu', 'median'] * edu) + (az.summary(trace, stat_funcs={"median": np.median}).loc['beta_false_recog', 'median'] * false_recog)

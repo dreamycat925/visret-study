@@ -7,9 +7,6 @@ import seaborn as sns
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import roc_curve, auc
 
-# 🔹 NumPy のランダムシードを設定（PyMC のランダム性にも影響）
-np.random.seed(42)
-
 # ✅ AP群を除外し、HP vs AD の比較を行う
 Z = df_com[df_com['group'].isin(['hs', 'ci'])].copy()
 
@@ -51,7 +48,7 @@ with pm.Model() as bayesian_logit_model:
     likelihood = pm.Bernoulli("y", p=p, observed=y)
     
     # ✅ MCMCサンプリング（エラーを防ぐため、サンプル数を調整）
-    trace_bayes_logit = pm.sample(2000, tune=1000, target_accept=0.98, return_inferencedata=True)
+    trace_bayes_logit = pm.sample(2000, tune=1000, chains=4, target_accept=0.98, return_inferencedata=True)
 
 # ✅ 事後分布の要約
 summary = az.summary(trace_bayes_logit, stat_funcs={"median": np.median}, hdi_prob=0.95)
@@ -113,4 +110,9 @@ for label in plt.gca().get_yticklabels():
     
 plt.legend()
 plt.tight_layout()
+plt.show()
+
+az.plot_trace(trace_bayes_logit, figsize=(20, 12), combined=False, compact=False)
+plt.tight_layout()
+az.plot_posterior(trace_bayes_logit, hdi_prob=0.95)
 plt.show()
