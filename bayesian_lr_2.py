@@ -1,4 +1,4 @@
-# 点数とgroup　性別抜き
+# 点数とgroup　有意のみ
 
 import pymc as pm
 import numpy as np
@@ -17,26 +17,17 @@ X = X[['検査時の年齢', '教育歴', '絵の再認課題_点数', '絵の�
 # ✅ グループを数値化（0=健常, 1=患者）
 X["group"] = (df_com["group"] == "ap").astype(int)
 
-# 標準化
-# scaler = StandardScaler()
-# num_cols = ['検査時の年齢', '教育歴', '絵の再認課題_点数', '絵の再認課題_虚再認の数']  # 標準化対象の数値カラム
-# X[num_cols] = scaler.fit_transform(X[num_cols])
-
-
-
 # ✅ ベイズ線形回帰（点数の群間差を評価）
 with pm.Model() as model_score_adj:
     beta_0 = pm.Normal("beta_0", mu=0, sigma=1)  # 切片
     beta_group = pm.Normal("beta_group", mu=0, sigma=1)  # 群の影響
     beta_age = pm.Normal("beta_age", mu=0, sigma=1)  # 年齢の影響
-    beta_edu = pm.Normal("beta_edu", mu=0, sigma=1)  # 教育歴の影響
-    beta_false_recognition = pm.Normal("beta_false_recognition", mu=0, sigma=1)  # 教育歴の影響
+    beta_false_recognition = pm.Normal("beta_false_recognition", mu=0, sigma=1)  # 虚再認の数の影響
 
     mu = (
         beta_0
         + beta_group * X["group"]
         + beta_age * X["検査時の年齢"]
-        + beta_edu * X["教育歴"]
         + beta_false_recognition * X['絵の再認課題_虚再認の数']
     )
 
@@ -59,7 +50,7 @@ def compute_posterior_probabilities(trace, param):
     return prob_positive, prob_negative
 
 print("\n事後確率:")
-for param in ["beta_group", "beta_age", "beta_edu", "beta_false_recognition"]:
+for param in ["beta_group", "beta_age", "beta_false_recognition"]:
     p_pos, p_neg = compute_posterior_probabilities(trace_score_adj, param)
     print(f"{param}: P(β > 0) = {p_pos:.3f}, P(β < 0) = {p_neg:.3f}")
 
